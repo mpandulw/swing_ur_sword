@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -12,15 +13,15 @@ public class PlayerMovements : MonoBehaviour
     private SpriteRenderer sprite;
     private PlayerController playerController;
     private BoxCollider2D coll;
-
     private Vector2 moveInput;
+    private float mobileInputX = 0f;
     private bool isCrouching = false;
     private Vector2 standingColliderSize;
     private Vector2 standingColliderOffset;
+    private bool isAttacking = false;
 
-    private float mobileInputX = 0f;
-
-    private enum MovementsState { idle, run, jump, fall }
+    // Animation set
+    private enum MovementsState { idle, run, jump, fall, attack1, attack2 }
 
     [Header("Jump Settings")]
     [SerializeField] private LayerMask jumpableGround;
@@ -45,6 +46,8 @@ public class PlayerMovements : MonoBehaviour
         playerController.Movements.Move.performed += OnMove;
         playerController.Movements.Move.canceled += OnMoveCancel;
         playerController.Movements.Jump.performed += OnJump;
+
+        playerController.Attacks.BasicAttack.performed += Attack1;
     }
 
     private void OnDisable()
@@ -53,6 +56,8 @@ public class PlayerMovements : MonoBehaviour
         playerController.Movements.Move.performed -= OnMove;
         playerController.Movements.Move.canceled -= OnMoveCancel;
         playerController.Movements.Jump.performed -= OnJump;
+
+        playerController.Attacks.BasicAttack.performed -= Attack1;
     }
 
     private void OnMove(InputAction.CallbackContext ctx) => moveInput = ctx.ReadValue<Vector2>();
@@ -76,6 +81,28 @@ public class PlayerMovements : MonoBehaviour
         }
     }
 
+    private void Attack1(InputAction.CallbackContext ctx)
+    {
+        DoAttack1();
+    }
+
+    private void DoAttack1()
+    {
+        if (isGrounded() && !isJumping)
+        {
+            isAttacking = true;
+            anim.SetInteger("state", (int)MovementsState.attack1);
+            rb.linearVelocity = Vector2.zero;
+
+            Invoke(nameof(EndAttack), 0.4f);
+        }
+    }
+
+    private void EndAttack()
+    {
+        isAttacking = false;
+    }
+
     private void FixedUpdate()
     {
         if (Application.isMobilePlatform)
@@ -86,9 +113,16 @@ public class PlayerMovements : MonoBehaviour
         {
             moveInput = playerController.Movements.Move.ReadValue<Vector2>();
         }
+        if (!isAttacking)
+        {
+            Vector2 targetVelocity = new Vector2((moveInput.x + mobileInputX) * moveSpeed, rb.linearVelocity.y);
+            rb.linearVelocity = targetVelocity;
+        }
+        else
+        {
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+        }
 
-        Vector2 targetVelocity = new Vector2((moveInput.x + mobileInputX) * moveSpeed, rb.linearVelocity.y);
-        rb.linearVelocity = targetVelocity;
         UpdateAnimation();
     }
 
@@ -96,12 +130,14 @@ public class PlayerMovements : MonoBehaviour
     {
         MovementsState state;
 
-        if (moveInput.x > 0f)
+        float horizontal = moveInput.x != 0 ? moveInput.x : mobileInputX;
+
+        if (horizontal > 0f)
         {
             state = MovementsState.run;
             sprite.flipX = false;
         }
-        else if (moveInput.x < 0f)
+        else if (horizontal < 0f)
         {
             state = MovementsState.run;
             sprite.flipX = true;
@@ -125,6 +161,7 @@ public class PlayerMovements : MonoBehaviour
 
     private bool isGrounded()
     {
+        isJumping = false;
         return Physics2D.BoxCast(coll.bounds.center, coll.bounds.size, 0f, Vector2.down, 0.1f, jumpableGround);
     }
 
@@ -148,5 +185,10 @@ public class PlayerMovements : MonoBehaviour
     {
         if (isGrounded())
             Jump();
+    }
+
+    public void mobileAttack()
+    {
+        DoAttack1();
     }
 }
