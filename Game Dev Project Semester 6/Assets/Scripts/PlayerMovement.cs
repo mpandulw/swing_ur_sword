@@ -5,8 +5,8 @@ using UnityEngine.InputSystem;
 public class PlayerMovements : MonoBehaviour
 {
     [Header("Player Movements")]
-    public float moveSpeed = 5f;
-    public float jumpForce = 10f;
+    public float moveSpeed = 5f; // Move speed of the object
+    public float jumpForce = 10f; // How much high the object can jump
 
     private Rigidbody2D rb;
     private Animator anim;
@@ -19,9 +19,16 @@ public class PlayerMovements : MonoBehaviour
     private Vector2 standingColliderSize;
     private Vector2 standingColliderOffset;
     private bool isAttacking = false;
+    private bool isInvicible = false;
+
+    // Knockback variables
+    public float knockbackForce; // How much knockback effect will do to player
+    public float knockbackCounter; // How long the effect of knockback will be
+    public float knockbackTotalTime;  // Knockback time
+    public bool knockbackFromRight; // Track where will knockback effect will affect to player
 
     // Animation set
-    private enum MovementsState { idle, run, jump, fall, attack1, attack2 }
+    public enum MovementsState { idle, run, jump, fall, attack1, attack2, die, hit }
 
     [Header("Jump Settings")]
     [SerializeField] private LayerMask jumpableGround;
@@ -115,8 +122,24 @@ public class PlayerMovements : MonoBehaviour
         }
         if (!isAttacking)
         {
-            Vector2 targetVelocity = new Vector2((moveInput.x + mobileInputX) * moveSpeed, rb.linearVelocity.y);
-            rb.linearVelocity = targetVelocity;
+            if (knockbackCounter <= 0)
+            {
+                Vector2 targetVelocity = new Vector2((moveInput.x + mobileInputX) * moveSpeed, rb.linearVelocity.y);
+                rb.linearVelocity = targetVelocity;
+            }
+            else
+            {
+                if (knockbackFromRight == true)
+                {
+                    rb.linearVelocity = new Vector2(-knockbackForce, 0);
+                }
+                if (knockbackFromRight == false)
+                {
+                    rb.linearVelocity = new Vector2(knockbackForce, 0);
+                }
+                knockbackCounter -= Time.deltaTime;
+            }
+
         }
         else
         {
@@ -154,6 +177,12 @@ public class PlayerMovements : MonoBehaviour
         else if (rb.linearVelocity.y < -0.1f)
         {
             state = MovementsState.fall;
+        }
+
+        // Knockback / Hit animation
+        if (knockbackCounter > 0)
+        {
+            state = MovementsState.hit;
         }
 
         anim.SetInteger("state", (int)state);
