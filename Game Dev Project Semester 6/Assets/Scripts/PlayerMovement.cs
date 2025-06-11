@@ -27,8 +27,11 @@ public class PlayerMovements : MonoBehaviour
     public float knockbackTotalTime;  // Knockback time
     public bool knockbackFromRight; // Track where will knockback effect will affect to player
 
+    // Rolling variables
+    private bool isRolling;
+
     // Animation set
-    public enum MovementsState { idle, run, jump, fall, attack1, attack2, die, hit }
+    public enum MovementsState { idle, run, jump, fall, attack1, attack2, die, hit, roll }
 
     [Header("Jump Settings")]
     [SerializeField] private LayerMask jumpableGround;
@@ -53,6 +56,7 @@ public class PlayerMovements : MonoBehaviour
         playerController.Movements.Move.performed += OnMove;
         playerController.Movements.Move.canceled += OnMoveCancel;
         playerController.Movements.Jump.performed += OnJump;
+        playerController.Movements.Roll.performed += OnRoll;
 
         playerController.Attacks.BasicAttack.performed += Attack1;
     }
@@ -77,6 +81,12 @@ public class PlayerMovements : MonoBehaviour
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
     }
+
+    private void OnRoll(InputAction.CallbackContext ctx)
+    {
+        anim.SetInteger("state", (int)MovementsState.roll);
+    }
+
 
     private void Jump()
     {
@@ -131,11 +141,11 @@ public class PlayerMovements : MonoBehaviour
             {
                 if (knockbackFromRight == true)
                 {
-                    rb.linearVelocity = new Vector2(-knockbackForce, 0);
+                    rb.linearVelocity = new Vector2(-knockbackForce, 1);
                 }
                 if (knockbackFromRight == false)
                 {
-                    rb.linearVelocity = new Vector2(knockbackForce, 0);
+                    rb.linearVelocity = new Vector2(knockbackForce, 1);
                 }
                 knockbackCounter -= Time.deltaTime;
             }

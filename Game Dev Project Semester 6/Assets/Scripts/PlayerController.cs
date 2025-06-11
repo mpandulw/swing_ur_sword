@@ -117,6 +117,15 @@ public partial class @PlayerController: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Roll"",
+                    ""type"": ""Button"",
+                    ""id"": ""d562408a-48e5-44fe-9cf3-ce0e1e8ef23f"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -196,6 +205,17 @@ public partial class @PlayerController: IInputActionCollection2, IDisposable
                     ""action"": ""Crouch"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0b56ff20-e82c-46bf-a4ba-653ee95639bf"",
+                    ""path"": ""<Keyboard>/r"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Roll"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -235,6 +255,7 @@ public partial class @PlayerController: IInputActionCollection2, IDisposable
         m_Movements_Move = m_Movements.FindAction("Move", throwIfNotFound: true);
         m_Movements_Jump = m_Movements.FindAction("Jump", throwIfNotFound: true);
         m_Movements_Crouch = m_Movements.FindAction("Crouch", throwIfNotFound: true);
+        m_Movements_Roll = m_Movements.FindAction("Roll", throwIfNotFound: true);
         // Attacks
         m_Attacks = asset.FindActionMap("Attacks", throwIfNotFound: true);
         m_Attacks_BasicAttack = m_Attacks.FindAction("Basic Attack", throwIfNotFound: true);
@@ -322,6 +343,7 @@ public partial class @PlayerController: IInputActionCollection2, IDisposable
     private readonly InputAction m_Movements_Move;
     private readonly InputAction m_Movements_Jump;
     private readonly InputAction m_Movements_Crouch;
+    private readonly InputAction m_Movements_Roll;
     /// <summary>
     /// Provides access to input actions defined in input action map "Movements".
     /// </summary>
@@ -345,6 +367,10 @@ public partial class @PlayerController: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Movements/Crouch".
         /// </summary>
         public InputAction @Crouch => m_Wrapper.m_Movements_Crouch;
+        /// <summary>
+        /// Provides access to the underlying input action "Movements/Roll".
+        /// </summary>
+        public InputAction @Roll => m_Wrapper.m_Movements_Roll;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -380,6 +406,9 @@ public partial class @PlayerController: IInputActionCollection2, IDisposable
             @Crouch.started += instance.OnCrouch;
             @Crouch.performed += instance.OnCrouch;
             @Crouch.canceled += instance.OnCrouch;
+            @Roll.started += instance.OnRoll;
+            @Roll.performed += instance.OnRoll;
+            @Roll.canceled += instance.OnRoll;
         }
 
         /// <summary>
@@ -400,6 +429,9 @@ public partial class @PlayerController: IInputActionCollection2, IDisposable
             @Crouch.started -= instance.OnCrouch;
             @Crouch.performed -= instance.OnCrouch;
             @Crouch.canceled -= instance.OnCrouch;
+            @Roll.started -= instance.OnRoll;
+            @Roll.performed -= instance.OnRoll;
+            @Roll.canceled -= instance.OnRoll;
         }
 
         /// <summary>
@@ -557,6 +589,13 @@ public partial class @PlayerController: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnCrouch(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Roll" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnRoll(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Attacks" which allows adding and removing callbacks.
