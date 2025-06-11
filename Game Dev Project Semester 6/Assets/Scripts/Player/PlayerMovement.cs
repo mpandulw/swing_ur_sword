@@ -5,14 +5,15 @@ using UnityEngine.InputSystem;
 public class PlayerMovements : MonoBehaviour
 {
     [Header("Player Movements")]
-    public float moveSpeed = 5f; // Move speed of the object
-    public float jumpForce = 10f; // How much high the object can jump
+    public float moveSpeed = 5f;
+    public float jumpForce = 10f;
 
     private Rigidbody2D rb;
     private Animator anim;
     private SpriteRenderer sprite;
     private PlayerController playerController;
     private BoxCollider2D coll;
+    // private CapsuleCollider2D coll;
     private Vector2 moveInput;
     private float mobileInputX = 0f;
     private bool isCrouching = false;
@@ -21,33 +22,27 @@ public class PlayerMovements : MonoBehaviour
     private bool isAttacking = false;
     private bool isInvicible = false;
 
-    // Knockback variables
-    public float knockbackForce; // How much knockback effect will do to player
-    public float knockbackCounter; // How long the effect of knockback will be
-    public float knockbackTotalTime;  // Knockback time
-    public bool knockbackFromRight; // Track where will knockback effect will affect to player
+    public float knockbackForce;
+    public float knockbackCounter;
+    public float knockbackTotalTime;
+    public bool knockbackFromRight;
 
-    // Rolling variables
     private bool isRolling;
 
-    // Animation set
     public enum MovementsState { idle, run, jump, fall, attack1, attack2, die, hit, roll }
 
     [Header("Jump Settings")]
     [SerializeField] private LayerMask jumpableGround;
+
     private bool isJumping = false;
 
-    private void Awake()
+    void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         sprite = GetComponent<SpriteRenderer>();
         coll = GetComponent<BoxCollider2D>();
         playerController = new PlayerController();
-
-        // Store original collider values
-        standingColliderSize = coll.size;
-        standingColliderOffset = coll.offset;
     }
 
     private void OnEnable()
