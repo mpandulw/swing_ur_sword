@@ -4,37 +4,47 @@ using UnityEngine.InputSystem;
 
 public class PlayerMovements : MonoBehaviour
 {
+    private PlayerAttack att;
+    private PlayerController playerController;
+
+    // Component variables
+    private Rigidbody2D rb;
+    private Animator anim;
+    private SpriteRenderer sprite;
+    private BoxCollider2D coll;
+    private Vector2 moveInput;
+    private float mobileInputX = 0f;
+
+    // Movements variables
     [Header("Player Movements")]
     public float moveSpeed = 5f;
     public float jumpForce = 10f;
 
-    private Rigidbody2D rb;
-    private Animator anim;
-    private SpriteRenderer sprite;
-    private PlayerController playerController;
-    private BoxCollider2D coll;
-    // private CapsuleCollider2D coll;
-    private Vector2 moveInput;
-    private float mobileInputX = 0f;
-    private bool isCrouching = false;
-    private Vector2 standingColliderSize;
-    private Vector2 standingColliderOffset;
-    private bool isAttacking = false;
-    private bool isInvicible = false;
 
+    // Knockback variables
     public float knockbackForce;
     public float knockbackCounter;
     public float knockbackTotalTime;
     public bool knockbackFromRight;
+    private bool isInvicible = false;
 
+
+    // Crouch variables
+    private bool isCrouching = false;
+    private Vector2 standingColliderSize;
+    private Vector2 standingColliderOffset;
+
+
+    // Dodge / Rolling variables
     private bool isRolling;
+
 
     public enum MovementsState { idle, run, jump, fall, attack1, attack2, die, hit, roll }
 
     [Header("Jump Settings")]
     [SerializeField] private LayerMask jumpableGround;
 
-    private bool isJumping = false;
+    public bool isJumping = false;
 
     void Awake()
     {
@@ -43,6 +53,7 @@ public class PlayerMovements : MonoBehaviour
         sprite = GetComponent<SpriteRenderer>();
         coll = GetComponent<BoxCollider2D>();
         playerController = new PlayerController();
+        att = GetComponent<PlayerAttack>();
     }
 
     private void OnEnable()
@@ -52,8 +63,7 @@ public class PlayerMovements : MonoBehaviour
         playerController.Movements.Move.canceled += OnMoveCancel;
         playerController.Movements.Jump.performed += OnJump;
         playerController.Movements.Roll.performed += OnRoll;
-
-        playerController.Attacks.BasicAttack.performed += Attack1;
+        playerController.Attacks.BasicAttack.performed += OnAttack;
     }
 
     private void OnDisable()
@@ -62,8 +72,20 @@ public class PlayerMovements : MonoBehaviour
         playerController.Movements.Move.performed -= OnMove;
         playerController.Movements.Move.canceled -= OnMoveCancel;
         playerController.Movements.Jump.performed -= OnJump;
+        playerController.Movements.Roll.performed -= OnRoll;
+        playerController.Attacks.BasicAttack.performed -= OnAttack;
 
-        playerController.Attacks.BasicAttack.performed -= Attack1;
+    }
+
+    // Attack methods
+    private void OnAttack(InputAction.CallbackContext context)
+    {
+        att.DoAttack1();
+    }
+
+    public void mobileAttack()
+    {
+        att.DoAttack1();
     }
 
     private void OnMove(InputAction.CallbackContext ctx) => moveInput = ctx.ReadValue<Vector2>();
@@ -71,7 +93,7 @@ public class PlayerMovements : MonoBehaviour
 
     private void OnJump(InputAction.CallbackContext ctx)
     {
-        if (isGrounded() && !isCrouching) // Can't jump while crouching
+        if (isGrounded() && !isCrouching)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
@@ -85,7 +107,6 @@ public class PlayerMovements : MonoBehaviour
 
     private void Jump()
     {
-        // Cek ulang grounded saat ini, dan jangan gunakan isJumping (karena bisa delay)
         if (isGrounded())
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
@@ -93,29 +114,7 @@ public class PlayerMovements : MonoBehaviour
         }
     }
 
-    private void Attack1(InputAction.CallbackContext ctx)
-    {
-        DoAttack1();
-    }
-
-    private void DoAttack1()
-    {
-        if (isGrounded() && !isJumping)
-        {
-            isAttacking = true;
-            anim.SetInteger("state", (int)MovementsState.attack1);
-            rb.linearVelocity = Vector2.zero;
-
-            Invoke(nameof(EndAttack), 0.4f);
-        }
-    }
-
-    private void EndAttack()
-    {
-        isAttacking = false;
-    }
-
-    private void FixedUpdate()
+    void Update()
     {
         if (Application.isMobilePlatform)
         {
@@ -125,7 +124,7 @@ public class PlayerMovements : MonoBehaviour
         {
             moveInput = playerController.Movements.Move.ReadValue<Vector2>();
         }
-        if (!isAttacking)
+        if (!att.IsAttacking)
         {
             if (knockbackCounter <= 0)
             {
@@ -156,10 +155,16 @@ public class PlayerMovements : MonoBehaviour
 
     private void UpdateAnimation()
     {
+        if (att.IsAttacking)
+        {
+            return;
+        }
+
         MovementsState state;
 
         float horizontal = moveInput.x != 0 ? moveInput.x : mobileInputX;
 
+        // Walk and idle animation
         if (horizontal > 0f)
         {
             state = MovementsState.run;
@@ -175,6 +180,7 @@ public class PlayerMovements : MonoBehaviour
             state = MovementsState.idle;
         }
 
+        // Jump animation
         if (rb.linearVelocity.y > 0.1f)
         {
             state = MovementsState.jump;
@@ -184,7 +190,7 @@ public class PlayerMovements : MonoBehaviour
             state = MovementsState.fall;
         }
 
-        // Knockback / Hit animation
+        // Knockback animation
         if (knockbackCounter > 0)
         {
             state = MovementsState.hit;
@@ -193,7 +199,7 @@ public class PlayerMovements : MonoBehaviour
         anim.SetInteger("state", (int)state);
     }
 
-    private bool isGrounded()
+    public bool isGrounded()
     {
         isJumping = false;
         return Physics2D.BoxCast(coll.bounds.center, coll.bounds.size, 0f, Vector2.down, 0.1f, jumpableGround);
@@ -219,10 +225,5 @@ public class PlayerMovements : MonoBehaviour
     {
         if (isGrounded())
             Jump();
-    }
-
-    public void mobileAttack()
-    {
-        DoAttack1();
     }
 }

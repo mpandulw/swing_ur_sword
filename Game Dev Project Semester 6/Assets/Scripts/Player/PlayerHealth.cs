@@ -5,11 +5,10 @@ using static PlayerMovements;
 public class PlayerHealth : MonoBehaviour
 {
     [Header("Player Health")]
-    public int health; // Current player health
-    public int maxHealth; // Max player health
+    public int health;
+    public int maxHealth;
 
-
-    private PlayerMovements playerMovements; // Import PlayerMovements class
+    private PlayerMovements playerMovements;
     private Animator anim;
     public GameObject DiePanel;
 
@@ -53,8 +52,11 @@ public class PlayerHealth : MonoBehaviour
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
-            rb.angularVelocity = 0f; // Just in case you use rotation
+            rb.angularVelocity = 0f;
         }
+
+        BoxCollider2D coll = GetComponent<BoxCollider2D>();
+        coll.size = new Vector2(0.5f, 0.8f);
 
         anim.SetInteger("state", (int)MovementsState.die);
         DiePanel.SetActive(true);
